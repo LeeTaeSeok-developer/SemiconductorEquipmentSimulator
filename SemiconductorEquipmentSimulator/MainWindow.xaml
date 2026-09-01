@@ -19,5 +19,11 @@
         Height="50"
         Margin="140,120,0,0"
         Click="StopButton_Click"/>
+
+        <TextBlock x:Name="TemperatureText"
+           Text="TEMPERATURE : 25 °C"
+           FontSize="24"
+           Margin="0,180,0,0"
+           IsHitTestVisible="False"/>
     </Grid>
 </Window>
