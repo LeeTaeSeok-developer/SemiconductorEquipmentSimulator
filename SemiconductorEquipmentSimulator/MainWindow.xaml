@@ -90,6 +90,7 @@
 
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
 
             </Grid.ColumnDefinitions>
 
@@ -110,6 +111,13 @@
                 Height="60"
                 Margin="10,0,0,0"
                 Click="StopButton_Click"/>
+
+            <Button
+                Grid.Column="2"
+                Content="OVERHEAT TEST"
+                Height="60"
+                Margin="10,0,0,0"
+                Click="OverheatTestButton_Click"/>
 
         </Grid>
 

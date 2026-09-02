@@ -72,9 +72,31 @@ namespace SemiconductorEquipmentSimulator
                 StatusText.Text = "STATUS : STABLE";
                 timer.Stop();
             }
+
+            CheckInterlock();
         }
 
-       
+        //온도가 90이상이면 기계 자동 정지
+        private void CheckInterlock()
+        {
+            if (temperature >= 90)
+            {
+                StatusText.Text = "STATUS : ALARM - OVERHEAT";
+                timer.Stop();
+            }
+        }
+
+
+        //온도를 95로 설정하고 기계자동정지 호출
+        private void OverheatTestButton_Click(object sender, RoutedEventArgs e)
+        {
+            temperature = 95;
+            TemperatureText.Text = $"TEMPERATURE : {temperature} °C";
+
+            CheckInterlock();
+        }
+
+
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
             StatusText.Text = "STATUS : STOPPED";
