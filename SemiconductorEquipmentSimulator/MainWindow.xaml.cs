@@ -41,10 +41,21 @@ namespace SemiconductorEquipmentSimulator
             timer.Start();
         }
 
+        //온도가 1씩 오르다가 80까지 올라가면 멈추는 코드
         private void Timer_Tick(object? sender, EventArgs e)
         {
-            temperature++;
-            TemperatureText.Text = $"TEMPERATURE : {temperature} °C";
+            if (temperature < 80)
+            {
+                temperature++;
+                TemperatureText.Text = $"TEMPERATURE : {temperature} °C";
+            }
+
+            //온도가 80이 되면 텍스트 수정하고 timer를 멈춤
+            if (temperature == 80)
+            {
+                StatusText.Text = "STATUS : STABLE";
+                timer.Stop();
+            }
         }
 
        
