@@ -95,7 +95,18 @@ namespace SemiconductorEquipmentSimulator
 
             CheckInterlock();
         }
+        //초기화 버튼
+        private void ResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            timer.Stop();
 
+            temperature = 25;
+            pressure = 760;
+
+            TemperatureText.Text = $"TEMPERATURE : {temperature} °C";
+            PressureText.Text = $"PRESSURE : {pressure:F1} Torr";
+            StatusText.Text = "STATUS : STOPPED";
+        }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
