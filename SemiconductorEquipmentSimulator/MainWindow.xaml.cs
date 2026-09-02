@@ -13,105 +13,148 @@ using System.Windows.Threading;
 namespace SemiconductorEquipmentSimulator
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// 메인 장비 제어 화면
     /// </summary>
     public partial class MainWindow : Window
     {
-        //온도를 올리기 위한 타이머 객체 생성
+        // 온도와 압력을 변화시키기 위한 타이머
         private DispatcherTimer timer = new DispatcherTimer();
 
-        //온도
+        // 현재 온도
         private int temperature = 25;
 
-        //압력
+        // 현재 압력
         private double pressure = 760;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            //타이머 실행 간격 1초
+            // 타이머 실행 간격을 1초로 설정
             timer.Interval = TimeSpan.FromSeconds(1);
 
-            //Tick => 타이머가 울릴 때 마다 실행할 이벤트
-            //+=으로 쓰는 이유는 Tick이라는 이벤트가 이미 존재하고 Timer_Tick이라는 이벤트를 Tick에 추가하는 것이기 때문
+            // 타이머가 1초마다 동작할 때 Timer_Tick 실행
             timer.Tick += Timer_Tick;
         }
 
+        // 장비 시작
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
-            StatusText.Text = "STATUS : RUNNING";
+            StatusText.Text = "상태 : 가동 중";
+
             timer.Start();
+
+            LogList.Items.Add(
+                $"{DateTime.Now:HH:mm:ss} - 장비 시작"
+            );
         }
 
-        //온도가 1씩 오르다가 80까지 올라가면 멈추는 코드
+        // 1초마다 온도와 압력 변경
         private void Timer_Tick(object? sender, EventArgs e)
         {
+            // 온도를 최대 80°C까지 증가
             if (temperature < 80)
             {
                 temperature++;
-                TemperatureText.Text = $"TEMPERATURE : {temperature} °C";
+
+                TemperatureText.Text =
+                    $"온도 : {temperature} °C";
             }
 
-            //압력이 1 이하로 내려가지 않게 하기위함
+            // 압력을 최소 1 Torr까지 감소
             if (pressure > 1)
             {
                 pressure *= 0.9;
 
+                // 압력이 1 Torr 아래로 내려가지 않도록 제한
                 if (pressure < 1)
                 {
                     pressure = 1;
                 }
 
-                PressureText.Text = $"PRESSURE : {pressure:F1} Torr";
+                PressureText.Text =
+                    $"압력 : {pressure:F1} Torr";
             }
 
-            //온도가 80이 되고 압력이 1이하면 텍스트 수정하고 timer를 멈춤
+            // 목표 온도와 압력에 도달하면 장비 안정 상태
             if (temperature >= 80 && pressure <= 1)
             {
-                StatusText.Text = "STATUS : STABLE";
+                StatusText.Text = "상태 : 안정";
+
                 timer.Stop();
+
+                LogList.Items.Add(
+                    $"{DateTime.Now:HH:mm:ss} - 장비 안정 상태 도달"
+                );
             }
 
+            // 인터락 조건 검사
             CheckInterlock();
         }
 
-        //온도가 90이상이면 기계 자동 정지
+        // 과열 상태 검사 및 장비 자동 정지
         private void CheckInterlock()
         {
             if (temperature >= 90)
             {
-                StatusText.Text = "STATUS : ALARM - OVERHEAT";
+                StatusText.Text = "상태 : 경보 - 과열";
+
                 timer.Stop();
+
+                LogList.Items.Add(
+                    $"{DateTime.Now:HH:mm:ss} - 과열 경보 발생"
+                );
             }
         }
 
-
-        //온도를 95로 설정하고 기계자동정지 호출
-        private void OverheatTestButton_Click(object sender, RoutedEventArgs e)
+        // 과열 상황 테스트
+        private void OverheatTestButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
             temperature = 95;
-            TemperatureText.Text = $"TEMPERATURE : {temperature} °C";
+
+            TemperatureText.Text =
+                $"온도 : {temperature} °C";
 
             CheckInterlock();
         }
-        //초기화 버튼
-        private void ResetButton_Click(object sender, RoutedEventArgs e)
+
+        // 장비 초기화
+        private void ResetButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
             timer.Stop();
 
             temperature = 25;
             pressure = 760;
 
-            TemperatureText.Text = $"TEMPERATURE : {temperature} °C";
-            PressureText.Text = $"PRESSURE : {pressure:F1} Torr";
-            StatusText.Text = "STATUS : STOPPED";
+            TemperatureText.Text =
+                $"온도 : {temperature} °C";
+
+            PressureText.Text =
+                $"압력 : {pressure:F1} Torr";
+
+            StatusText.Text = "상태 : 정지";
+
+            LogList.Items.Add(
+                $"{DateTime.Now:HH:mm:ss} - 장비 초기화"
+            );
         }
 
-        private void StopButton_Click(object sender, RoutedEventArgs e)
+        // 장비 정지
+        private void StopButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
-            StatusText.Text = "STATUS : STOPPED";
+            StatusText.Text = "상태 : 정지";
+
             timer.Stop();
+
+            LogList.Items.Add(
+                $"{DateTime.Now:HH:mm:ss} - 장비 정지"
+            );
         }
     }
 }

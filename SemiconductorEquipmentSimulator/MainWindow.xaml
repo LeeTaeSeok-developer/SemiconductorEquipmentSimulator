@@ -38,7 +38,7 @@
 
         <TextBlock
             Grid.Row="0"
-            Text="SEMICONDUCTOR EQUIPMENT"
+            Text="반도체 장비 제어 시뮬레이터"
             FontSize="30"
             FontWeight="Bold"
             Margin="0,0,0,30"/>
@@ -51,7 +51,7 @@
         <TextBlock
             Grid.Row="1"
             x:Name="StatusText"
-            Text="STATUS : STOPPED"
+            Text="상태 : 정지"
             FontSize="24"
             Margin="0,0,0,20"/>
 
@@ -63,7 +63,7 @@
         <TextBlock
             Grid.Row="2"
             x:Name="TemperatureText"
-            Text="TEMPERATURE : 25 °C"
+            Text="온도 : 25 °C"
             FontSize="24"
             Margin="0,0,0,20"/>
 
@@ -75,8 +75,23 @@
         <TextBlock
             Grid.Row="3"
             x:Name="PressureText"
-            Text="PRESSURE : 760 Torr"
+            Text="압력 : 760 Torr"
             FontSize="24"/>
+
+        <!--로그-->
+        <StackPanel Grid.Row="4" Margin="0,20,0,20">
+
+            <TextBlock
+                Text="장비 로그"
+                FontSize="18"
+                FontWeight="Bold"
+                Margin="0,0,0,10"/>
+
+            <ListBox
+                x:Name="LogList"
+                Height="120"/>
+
+        </StackPanel>
 
 
         <!-- ========================= -->
@@ -99,7 +114,7 @@
             <!-- 왼쪽 칸 -->
             <Button
                 Grid.Column="0"
-                Content="START"
+                Content="시작"
                 Height="60"
                 Margin="0,0,10,0"
                 Click="StartButton_Click"/>
@@ -108,21 +123,21 @@
             <!-- 오른쪽 칸 -->
             <Button
                 Grid.Column="1"
-                Content="STOP"
+                Content="정지"
                 Height="60"
                 Margin="10,0,0,0"
                 Click="StopButton_Click"/>
 
             <Button
                 Grid.Column="2"
-                Content="OVERHEAT TEST"
+                Content="과열 테스트"
                 Height="60"
                 Margin="10,0,0,0"
                 Click="OverheatTestButton_Click"/>
 
             <Button
                 Grid.Column="3"
-                Content="RESET"
+                Content="초기화"
                 Height="60"
                 Margin="10,0,0,0"
                 Click="ResetButton_Click"/>
