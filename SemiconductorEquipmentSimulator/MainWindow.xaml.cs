@@ -20,8 +20,11 @@ namespace SemiconductorEquipmentSimulator
         //온도를 올리기 위한 타이머 객체 생성
         private DispatcherTimer timer = new DispatcherTimer();
 
-        //온도 변수
+        //온도
         private int temperature = 25;
+
+        //압력
+        private double pressure = 760;
 
         public MainWindow()
         {
@@ -50,8 +53,21 @@ namespace SemiconductorEquipmentSimulator
                 TemperatureText.Text = $"TEMPERATURE : {temperature} °C";
             }
 
-            //온도가 80이 되면 텍스트 수정하고 timer를 멈춤
-            if (temperature == 80)
+            //압력이 1 이하로 내려가지 않게 하기위함
+            if (pressure > 1)
+            {
+                pressure *= 0.9;
+
+                if (pressure < 1)
+                {
+                    pressure = 1;
+                }
+
+                PressureText.Text = $"PRESSURE : {pressure:F1} Torr";
+            }
+
+            //온도가 80이 되고 압력이 1이하면 텍스트 수정하고 timer를 멈춤
+            if (temperature >= 80 && pressure <= 1)
             {
                 StatusText.Text = "STATUS : STABLE";
                 timer.Stop();
