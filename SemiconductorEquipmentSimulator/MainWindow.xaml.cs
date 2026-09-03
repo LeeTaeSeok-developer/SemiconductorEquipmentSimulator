@@ -9,9 +9,12 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using SemiconductorEquipmentSimulator.Enums;
+using SemiconductorEquipmentSimulator.Services;
 
 namespace SemiconductorEquipmentSimulator
 {
+
     /// <summary>
     /// 메인 장비 제어 화면
     /// </summary>
@@ -26,9 +29,22 @@ namespace SemiconductorEquipmentSimulator
         // 현재 압력
         private double pressure = 760;
 
+        //현재 장비 상태
+        private EquipmentState currentState = EquipmentState.Stopped;
+
+        // 현재 발생한 경보
+        private AlarmType currentAlarm = AlarmType.None;
+
+        // 장비 로그 저장 및 불러오기 담당
+        private readonly EquipmentLogger equipmentLogger =
+            new EquipmentLogger();
+
         public MainWindow()
         {
             InitializeComponent();
+
+            //로그 호출
+            LoadLogs();
 
             // 타이머 실행 간격을 1초로 설정
             timer.Interval = TimeSpan.FromSeconds(1);
@@ -37,15 +53,44 @@ namespace SemiconductorEquipmentSimulator
             timer.Tick += Timer_Tick;
         }
 
+        // 저장된 로그를 화면에 표시
+        private void LoadLogs()
+        {
+            foreach (string logLine in equipmentLogger.ReadAll())   //저장된 로그를 하나씩 꺼냄
+            {
+                LogList.Items.Add(logLine);
+            }
+        }
+
+        // 로그를 파일과 화면에 동시에 추가
+        private void AddLog(string message)
+        {
+            string logLine = equipmentLogger.Write(message);
+
+            LogList.Items.Add(logLine);
+            LogList.ScrollIntoView(logLine);    //자동 스크롤 기능
+        }
+
         // 장비 시작
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
+            // 정지 상태가 아니면 시작할 수 없음
+            if (currentState != EquipmentState.Stopped)
+            {
+                AddLog(
+                    $"시작 불가 : 현재 상태 {currentState}"
+                );
+
+                return;
+            }
+
+            currentState = EquipmentState.Running;
             StatusText.Text = "상태 : 가동 중";
 
             timer.Start();
 
-            LogList.Items.Add(
-                $"{DateTime.Now:HH:mm:ss} - 장비 시작"
+            AddLog(
+                $"장비 시작"
             );
         }
 
@@ -76,15 +121,17 @@ namespace SemiconductorEquipmentSimulator
                     $"압력 : {pressure:F1} Torr";
             }
 
-            // 목표 온도와 압력에 도달하면 장비 안정 상태
-            if (temperature >= 80 && pressure <= 1)
+            // 가동중 목표 온도와 압력에 도달하면 장비 안정 상태
+            if (currentState == EquipmentState.Running && 
+                temperature >= 80 && 
+                pressure <= 1)
             {
                 StatusText.Text = "상태 : 안정";
 
                 timer.Stop();
 
-                LogList.Items.Add(
-                    $"{DateTime.Now:HH:mm:ss} - 장비 안정 상태 도달"
+                AddLog(
+                    $"장비 안정 상태 도달"
                 );
             }
 
@@ -97,14 +144,55 @@ namespace SemiconductorEquipmentSimulator
         {
             if (temperature >= 90)
             {
-                StatusText.Text = "상태 : 경보 - 과열";
-
-                timer.Stop();
-
-                LogList.Items.Add(
-                    $"{DateTime.Now:HH:mm:ss} - 과열 경보 발생"
+                RaiseAlarm(
+                    AlarmType.OverTemperature,
+                    "과열"
                 );
             }
+        }
+
+        private void PressureErrorTestButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            RaiseAlarm(
+                AlarmType.PressureError,
+                "압력 이상"
+            );
+        }
+
+
+        private void SensorErrorTestButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            RaiseAlarm(
+                AlarmType.SensorError,
+                "센서 이상"
+            );
+        }
+
+
+        private void RaiseAlarm(
+            AlarmType alarmType,
+            string alarmMessage)
+        {
+            // 이미 알람 상태라면 중복 발생 방지
+            if (currentState == EquipmentState.Alarm)
+            {
+                return;
+            }
+
+            currentAlarm = alarmType;
+            currentState = EquipmentState.Alarm;
+
+            timer.Stop();
+
+            StatusText.Text = $"상태 : 경보 - {alarmMessage}";
+
+            AddLog(
+                $"경보 발생 : {currentAlarm}"
+            );
         }
 
         // 과열 상황 테스트
@@ -121,10 +209,24 @@ namespace SemiconductorEquipmentSimulator
         }
 
         // 장비 초기화
+        // 경보 상태 초기화
         private void ResetButton_Click(
             object sender,
             RoutedEventArgs e)
         {
+            currentAlarm = AlarmType.None;
+            currentState = EquipmentState.Stopped;
+
+            // 경보 상태에서만 초기화 가능
+            if (currentState != EquipmentState.Alarm)
+            {
+                AddLog(
+                    $"초기화 불가 : 경보 상태가 아님"
+                );
+
+                return;
+            }
+
             timer.Stop();
 
             temperature = 25;
@@ -136,24 +238,47 @@ namespace SemiconductorEquipmentSimulator
             PressureText.Text =
                 $"압력 : {pressure:F1} Torr";
 
+            currentState = EquipmentState.Stopped;
             StatusText.Text = "상태 : 정지";
 
-            LogList.Items.Add(
-                $"{DateTime.Now:HH:mm:ss} - 장비 초기화"
+            AddLog(
+                $"장비 초기화"
             );
         }
 
+        // 장비 정지
         // 장비 정지
         private void StopButton_Click(
             object sender,
             RoutedEventArgs e)
         {
-            StatusText.Text = "상태 : 정지";
+            // 이미 정지 상태라면 다시 정지하지 않음
+            if (currentState == EquipmentState.Stopped)
+            {
+                AddLog(
+                    $"정지 불가 : 이미 정지 상태"
+                );
+
+                return;
+            }
+
+            // 경보 상태에서는 초기화 버튼을 사용해야 함
+            if (currentState == EquipmentState.Alarm)
+            {
+                AddLog(
+                    $"정지 불가 : 먼저 초기화 필요"
+                );
+
+                return;
+            }
 
             timer.Stop();
 
-            LogList.Items.Add(
-                $"{DateTime.Now:HH:mm:ss} - 장비 정지"
+            currentState = EquipmentState.Stopped;
+            StatusText.Text = "상태 : 정지";
+
+            AddLog(
+                $"장비 정지"
             );
         }
     }
