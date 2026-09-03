@@ -126,6 +126,7 @@ namespace SemiconductorEquipmentSimulator
                 temperature >= 80 && 
                 pressure <= 1)
             {
+                currentState = EquipmentState.Stable;
                 StatusText.Text = "상태 : 안정";
 
                 timer.Stop();
