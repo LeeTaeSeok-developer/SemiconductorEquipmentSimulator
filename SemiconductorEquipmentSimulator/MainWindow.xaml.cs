@@ -214,16 +214,10 @@ namespace SemiconductorEquipmentSimulator
             object sender,
             RoutedEventArgs e)
         {
-            currentAlarm = AlarmType.None;
-            currentState = EquipmentState.Stopped;
-
             // 경보 상태에서만 초기화 가능
             if (currentState != EquipmentState.Alarm)
             {
-                AddLog(
-                    $"초기화 불가 : 경보 상태가 아님"
-                );
-
+                AddLog("초기화 불가 : 경보 상태가 아님");
                 return;
             }
 
@@ -232,18 +226,18 @@ namespace SemiconductorEquipmentSimulator
             temperature = 25;
             pressure = 760;
 
+            currentAlarm = AlarmType.None;
+            currentState = EquipmentState.Stopped;
+
             TemperatureText.Text =
                 $"온도 : {temperature} °C";
 
             PressureText.Text =
                 $"압력 : {pressure:F1} Torr";
 
-            currentState = EquipmentState.Stopped;
             StatusText.Text = "상태 : 정지";
 
-            AddLog(
-                $"장비 초기화"
-            );
+            AddLog("장비 초기화");
         }
 
         // 장비 정지
