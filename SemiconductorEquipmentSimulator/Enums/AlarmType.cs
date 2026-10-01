@@ -9,8 +9,16 @@ namespace SemiconductorEquipmentSimulator.Enums;
 public enum AlarmType
 {
     None,
+
+    //과열
     OverTemperature,
+
+    //압력 오류
     PressureError,
+
+    //센서 에러
     SensorError,
+
+    //통신 에러
     CommunicationError
 }

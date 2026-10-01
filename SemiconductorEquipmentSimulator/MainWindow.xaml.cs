@@ -32,12 +32,23 @@ namespace SemiconductorEquipmentSimulator
         //현재 장비 상태
         private EquipmentState currentState = EquipmentState.Stopped;
 
+        // 현재 공정 단계
+        private ProcessStep currentProcessStep = ProcessStep.Idle;
+
         // 현재 발생한 경보
         private AlarmType currentAlarm = AlarmType.None;
 
         // 장비 로그 저장 및 불러오기 담당
         private readonly EquipmentLogger equipmentLogger =
             new EquipmentLogger();
+
+
+        // 생산 완료 횟수
+        private int cycleCount = 0;
+
+
+        // 공정 진행 시간
+        private int processingSeconds = 0;
 
         public MainWindow()
         {
@@ -85,58 +96,93 @@ namespace SemiconductorEquipmentSimulator
             }
 
             currentState = EquipmentState.Running;
+            currentProcessStep = ProcessStep.Heating;
             StatusText.Text = "상태 : 가동 중";
+            ProcessStepText.Text = "공정 단계 : Heating";
 
             timer.Start();
 
-            AddLog(
-                $"장비 시작"
-            );
+            AddLog("장비 시작");
+            AddLog("Heating 시작");
         }
 
-        // 1초마다 온도와 압력 변경
+        // 공정 단계에 따라 장비 상태 처리
         private void Timer_Tick(object? sender, EventArgs e)
         {
-            // 온도를 최대 80°C까지 증가
-            if (temperature < 80)
+            // 1단계 : Heating
+            if (currentProcessStep == ProcessStep.Heating)
             {
-                temperature++;
-
-                TemperatureText.Text =
-                    $"온도 : {temperature} °C";
-            }
-
-            // 압력을 최소 1 Torr까지 감소
-            if (pressure > 1)
-            {
-                pressure *= 0.9;
-
-                // 압력이 1 Torr 아래로 내려가지 않도록 제한
-                if (pressure < 1)
+                if (temperature < 80)
                 {
-                    pressure = 1;
+                    temperature++;
+
+                    TemperatureText.Text =
+                        $"온도 : {temperature} °C";
                 }
 
-                PressureText.Text =
-                    $"압력 : {pressure:F1} Torr";
+                if (temperature >= 80)
+                {
+                    currentProcessStep = ProcessStep.PressureControl;
+
+                    ProcessStepText.Text = "공정 단계 : Pressure Control";
+
+                    AddLog("목표 온도 도달");
+                    AddLog("Pressure Control 시작");
+                }
             }
 
-            // 가동중 목표 온도와 압력에 도달하면 장비 안정 상태
-            if (currentState == EquipmentState.Running && 
-                temperature >= 80 && 
-                pressure <= 1)
+            // 2단계 : Pressure Control
+            else if (currentProcessStep == ProcessStep.PressureControl)
             {
-                currentState = EquipmentState.Stable;
-                StatusText.Text = "상태 : 안정";
+                if (pressure > 1)
+                {
+                    pressure *= 0.9;
 
-                timer.Stop();
+                    if (pressure < 1)
+                    {
+                        pressure = 1;
+                    }
 
-                AddLog(
-                    $"장비 안정 상태 도달"
-                );
+                    PressureText.Text =
+                        $"압력 : {pressure:F1} Torr";
+                }
+
+                if (pressure <= 1)
+                {
+                    currentProcessStep = ProcessStep.Stable;
+                    currentState = EquipmentState.Stable;
+
+                    StatusText.Text = "상태 : 안정";
+                    ProcessStepText.Text = "공정 단계 : Stable";
+
+                    timer.Stop();
+
+                    AddLog("목표 압력 도달");
+                    AddLog("장비 안정 상태 도달");
+                }
             }
 
-            // 인터락 조건 검사
+            else if (currentProcessStep == ProcessStep.Processing)
+            {
+                processingSeconds++;
+
+                AddLog($"공정 진행 : {processingSeconds}초");
+
+                if (processingSeconds >= 5)
+                {
+                    currentProcessStep = ProcessStep.Complete;
+                    cycleCount++;
+
+                    ProcessStepText.Text = "공정 단계 : Complete";
+
+                    timer.Stop();
+
+                    AddLog("공정 완료");
+                    AddLog($"생산 횟수 : {cycleCount}");
+                    CycleCountText.Text = $"생산 횟수 : {cycleCount}";
+                }
+            }
+
             CheckInterlock();
         }
 
@@ -229,6 +275,7 @@ namespace SemiconductorEquipmentSimulator
 
             currentAlarm = AlarmType.None;
             currentState = EquipmentState.Stopped;
+            currentProcessStep = ProcessStep.Idle;
 
             TemperatureText.Text =
                 $"온도 : {temperature} °C";
@@ -237,6 +284,7 @@ namespace SemiconductorEquipmentSimulator
                 $"압력 : {pressure:F1} Torr";
 
             StatusText.Text = "상태 : 정지";
+            ProcessStepText.Text = "공정 단계 : Idle";
 
             AddLog("장비 초기화");
         }
@@ -270,11 +318,39 @@ namespace SemiconductorEquipmentSimulator
             timer.Stop();
 
             currentState = EquipmentState.Stopped;
+            currentProcessStep = ProcessStep.Idle;
             StatusText.Text = "상태 : 정지";
+            ProcessStepText.Text = "공정 단계 : Idle";
+
 
             AddLog(
                 $"장비 정지"
             );
+        }
+
+
+        // 실제 공정 시작
+        private void ProcessStartButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            // Stable 상태가 아니면 공정 시작 불가
+            if (currentState != EquipmentState.Stable)
+            {
+                AddLog("공정 시작 불가 : 장비가 안정 상태가 아님");
+                return;
+            }
+
+
+            //현재 상태 = 웨이퍼 공정 시행중
+            currentProcessStep = ProcessStep.Processing;
+            processingSeconds = 0;
+
+            ProcessStepText.Text = "공정 단계 : Processing";
+
+            AddLog("공정 시작");
+
+            timer.Start();
         }
     }
 }
