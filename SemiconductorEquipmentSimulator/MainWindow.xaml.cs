@@ -57,7 +57,7 @@ namespace SemiconductorEquipmentSimulator
             //로그 호출
             LoadLogs();
 
-            // 타이머 실행 간격을 1초로 설정
+            // 타이머 실행 간격
             timer.Interval = TimeSpan.FromSeconds(1);
 
             // 타이머가 1초마다 동작할 때 Timer_Tick 실행
@@ -76,10 +76,30 @@ namespace SemiconductorEquipmentSimulator
         // 로그를 파일과 화면에 동시에 추가
         private void AddLog(string message)
         {
-            string logLine = equipmentLogger.Write(message);
+            WriteLog("EQUIPMENT", message);
+        }
+
+
+        // 알람 전용 로그
+        private void AddAlarmLog(string message)
+        {
+            WriteLog("ALARM", message);
+        }
+
+        // 생산 전용 로그
+        private void AddProductionLog(string message)
+        {
+            WriteLog("PRODUCTION", message);
+        }
+
+        private void WriteLog(string category, string message)
+        {
+            string logLine = equipmentLogger.Write(
+                $"[{category}] {message}"
+            );
 
             LogList.Items.Add(logLine);
-            LogList.ScrollIntoView(logLine);    //자동 스크롤 기능
+            LogList.ScrollIntoView(logLine);    //자동 스크롤
         }
 
         // 장비 시작
@@ -166,7 +186,7 @@ namespace SemiconductorEquipmentSimulator
             {
                 processingSeconds++;
 
-                AddLog($"공정 진행 : {processingSeconds}초");
+                AddProductionLog($"공정 진행 : {processingSeconds}초");
 
                 if (processingSeconds >= 5)
                 {
@@ -177,8 +197,8 @@ namespace SemiconductorEquipmentSimulator
 
                     timer.Stop();
 
-                    AddLog("공정 완료");
-                    AddLog($"생산 횟수 : {cycleCount}");
+                    AddProductionLog("공정 완료");
+                    AddProductionLog($"생산 횟수 : {cycleCount}");
                     CycleCountText.Text = $"생산 횟수 : {cycleCount}";
                 }
             }
@@ -237,7 +257,7 @@ namespace SemiconductorEquipmentSimulator
 
             StatusText.Text = $"상태 : 경보 - {alarmMessage}";
 
-            AddLog(
+            AddAlarmLog(
                 $"경보 발생 : {currentAlarm}"
             );
         }
@@ -348,7 +368,7 @@ namespace SemiconductorEquipmentSimulator
 
             ProcessStepText.Text = "공정 단계 : Processing";
 
-            AddLog("공정 시작");
+            AddProductionLog("공정 시작");
 
             timer.Start();
         }
