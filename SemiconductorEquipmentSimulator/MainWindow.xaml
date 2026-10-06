@@ -29,6 +29,9 @@
             <!-- 생산 횟수-->
             <RowDefinition Height="Auto"/>
 
+            <!-- MES 작업지시 -->
+            <RowDefinition Height="Auto"/>
+
             <!-- 로그 영역 -->
             <RowDefinition Height="*"/>
 
@@ -100,8 +103,67 @@
             FontSize="20"
             Margin="0,10,0,0"/>
 
+        <!-- MES 작업지시 정보 -->
+        <StackPanel Grid.Row="6" Margin="0,15,0,0">
+
+            <TextBlock
+        Text="MES 작업지시"
+        FontSize="18"
+        FontWeight="Bold"
+        Margin="0,0,0,5"/>
+
+            <StackPanel Orientation="Horizontal">
+
+                <TextBlock
+            Text="Order 번호 : "
+            FontSize="16"
+            VerticalAlignment="Center"/>
+
+                <TextBox
+            x:Name="OrderNumberInput"
+            Width="100"
+            Text="ORD-001"
+            Margin="5,0,15,0"/>
+
+                <TextBlock
+            Text="제품명 : "
+            FontSize="16"
+            VerticalAlignment="Center"/>
+
+                <TextBox
+            x:Name="ProductNameInput"
+            Width="100"
+            Text="Wafer-A"
+            Margin="5,0,15,0"/>
+
+                <TextBlock
+            Text="목표수량 : "
+            FontSize="16"
+            VerticalAlignment="Center"/>
+
+                <TextBox
+            x:Name="TargetQuantityInput"
+            Width="50"
+            Text="3"
+            Margin="5,0,15,0"/>
+
+                <Button
+            Content="작업지시 등록"
+            Width="100"
+            Click="RegisterOrderButton_Click"/>
+
+            </StackPanel>
+
+            <TextBlock
+        x:Name="ProducedQuantityText"
+        Text="생산수량 : 0 / 0"
+        FontSize="16"
+        Margin="0,5,0,0"/>
+
+        </StackPanel>
+
         <!--로그-->
-        <StackPanel Grid.Row="6" Margin="0,20,0,20">
+        <StackPanel Grid.Row="7" Margin="0,20,0,20">
 
             <TextBlock
                 Text="장비 로그"
@@ -120,7 +182,7 @@
         <!-- Row 5 : 버튼 영역 -->
         <!-- ========================= -->
 
-        <Grid Grid.Row="7">
+        <Grid Grid.Row="8">
 
             <!-- 버튼 영역 -->
             <Grid.ColumnDefinitions>

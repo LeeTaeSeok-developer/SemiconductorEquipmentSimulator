@@ -47,6 +47,22 @@ namespace SemiconductorEquipmentSimulator
         private int cycleCount = 0;
 
 
+        // 현재 작업지시 번호
+        private string currentOrderNumber = "";
+
+        // 작업지시 진행 여부
+        private bool isOrderActive = false;
+
+        // 현재 생산 제품명
+        private string currentProductName = "";
+
+        // 목표 생산수량
+        private int targetQuantity = 0;
+
+        // 현재 생산수량
+        private int producedQuantity = 0;
+
+
         // 공정 진행 시간
         private int processingSeconds = 0;
 
@@ -58,7 +74,7 @@ namespace SemiconductorEquipmentSimulator
             LoadLogs();
 
             // 타이머 실행 간격
-            timer.Interval = TimeSpan.FromSeconds(1);
+            timer.Interval = TimeSpan.FromSeconds(0.2);
 
             // 타이머가 1초마다 동작할 때 Timer_Tick 실행
             timer.Tick += Timer_Tick;
@@ -200,6 +216,29 @@ namespace SemiconductorEquipmentSimulator
                     AddProductionLog("공정 완료");
                     AddProductionLog($"생산 횟수 : {cycleCount}");
                     CycleCountText.Text = $"생산 횟수 : {cycleCount}";
+
+                    // MES 작업지시가 진행 중이면 생산수량 증가
+                    if (isOrderActive)
+                    {
+                        producedQuantity++;
+
+                        ProducedQuantityText.Text =
+                            $"생산수량 : {producedQuantity} / {targetQuantity}";
+
+                        AddProductionLog(
+                            $"MES 생산수량 : {producedQuantity} / {targetQuantity}"
+                        );
+
+                        // 목표수량에 도달하면 작업지시 완료
+                        if (producedQuantity >= targetQuantity)
+                        {
+                            isOrderActive = false;
+
+                            AddProductionLog(
+                                $"MES 작업지시 완료 : {currentOrderNumber}"
+                            );
+                        }
+                    }
                 }
             }
 
@@ -360,7 +399,12 @@ namespace SemiconductorEquipmentSimulator
                 AddLog("공정 시작 불가 : 장비가 안정 상태가 아님");
                 return;
             }
-
+            // MES 작업지시가 없으면 공정 시작 불가
+            if (!isOrderActive)
+            {
+                AddLog("공정 시작 불가 : MES 작업지시가 없음");
+                return;
+            }
 
             //현재 상태 = 웨이퍼 공정 시행중
             currentProcessStep = ProcessStep.Processing;
@@ -371,6 +415,43 @@ namespace SemiconductorEquipmentSimulator
             AddProductionLog("공정 시작");
 
             timer.Start();
+        }
+
+        // MES 작업지시 등록
+        private void RegisterOrderButton_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            // Order 번호 또는 제품명이 비어있는지 확인
+            if (string.IsNullOrWhiteSpace(OrderNumberInput.Text) ||
+                string.IsNullOrWhiteSpace(ProductNameInput.Text))
+            {
+                AddLog("작업지시 등록 실패 : Order 번호 또는 제품명 확인 필요");
+                return;
+            }
+
+            // 목표수량이 숫자인지 확인
+            if (!int.TryParse(TargetQuantityInput.Text, out int quantity) ||
+                quantity <= 0)
+            {
+                AddLog("작업지시 등록 실패 : 목표수량 확인 필요");
+                return;
+            }
+
+            currentOrderNumber = OrderNumberInput.Text;
+            currentProductName = ProductNameInput.Text;
+            targetQuantity = quantity;
+
+            producedQuantity = 0;
+            isOrderActive = true;
+
+            ProducedQuantityText.Text =
+                $"생산수량 : {producedQuantity} / {targetQuantity}";
+
+            AddLog(
+                $"작업지시 등록 : {currentOrderNumber}, " +
+                $"{currentProductName}, 목표수량 {targetQuantity}"
+            );
         }
     }
 }
