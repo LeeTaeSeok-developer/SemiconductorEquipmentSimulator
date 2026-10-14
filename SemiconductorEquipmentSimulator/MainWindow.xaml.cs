@@ -11,6 +11,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using SemiconductorEquipmentSimulator.Enums;
 using SemiconductorEquipmentSimulator.Services;
+using System.Diagnostics;
 
 namespace SemiconductorEquipmentSimulator
 {
@@ -65,6 +66,9 @@ namespace SemiconductorEquipmentSimulator
 
         // 공정 진행 시간
         private int processingSeconds = 0;
+
+        // 공정의 실제 경과 시간 측정
+        private readonly Stopwatch processStopwatch = new Stopwatch();
 
         public MainWindow()
         {
@@ -200,22 +204,34 @@ namespace SemiconductorEquipmentSimulator
 
             else if (currentProcessStep == ProcessStep.Processing)
             {
-                processingSeconds++;
+                // 실제 경과 시간을 초 단위로 확인
+                int elapsedSeconds =
+                    (int)processStopwatch.Elapsed.TotalSeconds;
 
-                AddProductionLog($"공정 진행 : {processingSeconds}초");
-
-                if (processingSeconds >= 5)
+                // 같은 초의 로그가 반복해서 쌓이지 않도록 제한
+                if (elapsedSeconds > processingSeconds)
                 {
+                    processingSeconds = elapsedSeconds;
+
+                    AddProductionLog(
+                        $"공정 진행 : {processingSeconds}초"
+                    );
+                }
+
+                // 실제로 5초가 지나야 공정 완료
+                if (processStopwatch.Elapsed.TotalSeconds >= 5)
+                {
+                    processStopwatch.Stop();
+                    timer.Stop();
+
                     currentProcessStep = ProcessStep.Complete;
                     cycleCount++;
 
                     ProcessStepText.Text = "공정 단계 : Complete";
-
-                    timer.Stop();
+                    CycleCountText.Text = $"생산 횟수 : {cycleCount}";
 
                     AddProductionLog("공정 완료");
                     AddProductionLog($"생산 횟수 : {cycleCount}");
-                    CycleCountText.Text = $"생산 횟수 : {cycleCount}";
 
                     // MES 작업지시가 진행 중이면 생산수량 증가
                     if (isOrderActive)
@@ -393,12 +409,20 @@ namespace SemiconductorEquipmentSimulator
             object sender,
             RoutedEventArgs e)
         {
+            // 이미 진행 중이면 다시 시작하지 않음
+            if (currentProcessStep == ProcessStep.Processing)
+            {
+                AddLog("공정 시작 불가 : 이미 공정 진행 중");
+                return;
+            }
+
             // Stable 상태가 아니면 공정 시작 불가
             if (currentState != EquipmentState.Stable)
             {
                 AddLog("공정 시작 불가 : 장비가 안정 상태가 아님");
                 return;
             }
+
             // MES 작업지시가 없으면 공정 시작 불가
             if (!isOrderActive)
             {
@@ -406,7 +430,6 @@ namespace SemiconductorEquipmentSimulator
                 return;
             }
 
-            //현재 상태 = 웨이퍼 공정 시행중
             currentProcessStep = ProcessStep.Processing;
             processingSeconds = 0;
 
@@ -414,6 +437,8 @@ namespace SemiconductorEquipmentSimulator
 
             AddProductionLog("공정 시작");
 
+            // 이전 시간을 지우고 새 공정의 시간 측정 시작
+            processStopwatch.Restart();
             timer.Start();
         }
 
